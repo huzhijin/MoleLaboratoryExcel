@@ -115,4 +115,4 @@ licenses.licx
 # 项目特定排除
 *.publish/
 app.publish/
-*.ClickOnce/ 
+*.ClickOnce/ packages/
