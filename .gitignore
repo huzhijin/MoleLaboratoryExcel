@@ -1,0 +1,118 @@
+## Visual Studio临时文件，构建结果和由IDE生成的文件
+
+# 用户特定文件
+*.rsuser
+*.suo
+*.user
+*.userosscache
+*.sln.docstates
+
+# 用户特定文件（MonoDevelop/Xamarin Studio）
+*.userprefs
+
+# Mono自动生成的文件
+mono_crash.*
+
+# 构建结果
+[Dd]ebug/
+[Dd]ebugPublic/
+[Rr]elease/
+[Rr]eleases/
+x64/
+x86/
+[Ww][Ii][Nn]32/
+[Aa][Rr][Mm]/
+[Aa][Rr][Mm]64/
+bld/
+[Bb]in/
+[Oo]bj/
+[Ll]og/
+[Ll]ogs/
+
+# Visual Studio 2015/2017缓存/选项目录
+.vs/
+# 取消注释如果您使用SQL Server CE
+#*.sdf
+# Visual Studio数据库项目
+*.dbmdl
+*.dbproj.schemaview
+*.jfm
+*.pfx
+*.publishsettings
+orleans.codegen.cs
+
+# 由于已经在项目中跟踪了.user文件，将以下内容注释掉：
+#*.user
+
+# JetBrains Rider
+.idea/
+*.sln.iml
+
+# CodeRush个人设置
+.cr/personal
+
+# Python工具for Visual Studio (PTVS)
+__pycache__/
+*.pyc
+
+# Cake - 取消常见工具文件夹注释
+tools/**
+!tools/packages.config
+
+# Tabs Studio
+*.tss
+
+# Telerik的JustMock配置文件
+*.jmconfig
+
+# BizTalk构建输出
+*.btp.cs
+*.btm.cs
+*.odx.cs
+*.xsd.cs
+
+# OpenCover UI分析结果
+OpenCover/
+
+# Azure Stream Analytics本地运行输出
+ASALocalRun/
+
+# MSBuild二进制和结构化日志
+*.binlog
+
+# NVidia Nsight GPU调试器配置文件
+*.nvuser
+
+# MFractors (Xamarin productivity tool) working folder
+.mfractor/
+
+# Local History for Visual Studio
+.localhistory/
+
+# BeatPulse健康检查临时数据库
+healthchecksdb
+
+# 备份文件夹for Package Reference Convert tool in Visual Studio 2017
+MigrationBackup/
+
+# Ionide (cross platform F# VS Code tools) working folder
+.ionide/
+
+# Fody - auto-generated XML schema
+FodyWeavers.xsd
+
+# DevExpress特定文件
+*.dxr
+*.dx*licenses
+licenses.licx
+
+# Excel和Word临时文件
+~$*.xlsx
+~$*.xls
+~$*.docx
+~$*.doc
+
+# 项目特定排除
+*.publish/
+app.publish/
+*.ClickOnce/ 
