@@ -17,7 +17,8 @@ namespace MoleLaboratoryExcel.Forms
         private enum InstrumentBrand
         {
             ThermoFisher7500, // 赛默飞7500
-            HONGSHI          // 宏石
+            HONGSHI,          // 宏石
+            KUNPENG           // 鲲鹏
         }
 
         private TextEdit txtFilePath;
@@ -67,7 +68,7 @@ namespace MoleLaboratoryExcel.Forms
                 Properties =
                 {
                     TextEditStyle = DevExpress.XtraEditors.Controls.TextEditStyles.DisableTextEditor,
-                    Items = { "赛默飞7500", "宏石" }
+                    Items = { "赛默飞7500", "宏石", "鲲鹏" }
                 }
             };
 
@@ -157,8 +158,13 @@ namespace MoleLaboratoryExcel.Forms
                     foreach (string file in OpenExcelFileDialog.FileNames)
                     {
                         string filename = Path.GetFileName(file);
-                        // 根据不同品牌设置不同的起始行
-                        int headerRowIndex = selectedBrand == InstrumentBrand.HONGSHI ? 13 : 7; // 13对应第14行
+                        // 根据不同品牌设置不同的表头行（0基）
+                        // ThermoFisher: 第8行为表头 => 7
+                        // 宏石: 第14行为表头 => 13
+                        // 鲲鹏: 表头为第25行，数据从第26行开始 => headerRowIndex=24（0基）
+                        int headerRowIndex = 7;
+                        if (selectedBrand == InstrumentBrand.HONGSHI) headerRowIndex = 13;
+                        else if (selectedBrand == InstrumentBrand.KUNPENG) headerRowIndex = 24;
                         DataTable excelDataTable = DataTableUtil.ExcelToDataTable(file, headerRowIndex);
 
                         // 根据品牌重命名列
@@ -232,7 +238,9 @@ namespace MoleLaboratoryExcel.Forms
                         foreach (var kvp in allDataDic)
                         {
                             string[] columnNames = GetColumnNames();
-                            DataTable processedTable = DataTableUtil.RetainColumns(kvp.Value, columnNames);
+                            // 仅保留当前文件中实际存在的列，避免旧文件缺少“浓度”时报错
+                            var existingColumns = columnNames.Where(name => kvp.Value.Columns.Contains(name)).ToArray();
+                            DataTable processedTable = DataTableUtil.RetainColumns(kvp.Value, existingColumns);
                             DataTable transformedTable;
 
                             if (selectedBrand == InstrumentBrand.ThermoFisher7500)
@@ -242,18 +250,41 @@ namespace MoleLaboratoryExcel.Forms
                                 transformedTable = DataTableUtil.TransformQPCRData(processedTable);
                                 DataTableUtil.AddWellColumns(transformedTable, "Well");
                             }
-                            else
+                            else if (selectedBrand == InstrumentBrand.HONGSHI)
                             {
                                 processedTable = DataTableUtil.RemoveEmptyOrNullRowsEfficiently(
                                     processedTable, "目标");
+                                // 宏石：在原有 Ct/属性 的基础上新增“浓度”列（如存在）
+                                var valueCols = new List<string> { "Ct", "属性" };
+                                var suffixes = new List<string> { "-Ct", "-属性" };
+                                if (processedTable.Columns.Contains("浓度"))
+                                {
+                                    valueCols.Add("浓度");
+                                    suffixes.Add("-浓度");
+                                }
+
                                 transformedTable = DataTableUtil.TransformRowsToColumns(
                                     processedTable,
                                     groupByColumns: new[] { "反应孔", "样本名称" },
                                     categoryColumn: "目标",
-                                    valueColumns: new[] { "Ct", "属性" },
-                                    suffixes: new[] { "-Ct", "-属性" }
+                                    valueColumns: valueCols.ToArray(),
+                                    suffixes: suffixes.ToArray()
                                 );
                                 DataTableUtil.AddWellColumns(transformedTable, "反应孔");
+                            }
+                            else // 鲲鹏
+                            {
+                                processedTable = DataTableUtil.RemoveEmptyOrNullRowsEfficiently(
+                                    processedTable, "荧光染料");
+                                // 鲲鹏：以"孔"、"样本名称"分组，类别为"荧光染料"，值列为 Cq/浓度
+                                transformedTable = DataTableUtil.TransformRowsToColumns(
+                                    processedTable,
+                                    groupByColumns: new[] { "孔", "样本名称" },
+                                    categoryColumn: "荧光染料",
+                                    valueColumns: new[] { "Cq平均值", "浓度" },
+                                    suffixes: new[] { "-Cq", "-浓度" }
+                                );
+                                DataTableUtil.AddWellColumns(transformedTable, "孔");
                             }
 
                             processedTables.Add(kvp.Key, transformedTable);
@@ -303,7 +334,9 @@ namespace MoleLaboratoryExcel.Forms
                         foreach (var kvp in allDataDic)
                         {
                             string[] columnNames = GetColumnNames();
-                            DataTable processedTable = DataTableUtil.RetainColumns(kvp.Value, columnNames);
+                            // 仅保留当前文件中实际存在的列，避免旧文件缺少“浓度”时报错
+                            var existingColumns = columnNames.Where(name => kvp.Value.Columns.Contains(name)).ToArray();
+                            DataTable processedTable = DataTableUtil.RetainColumns(kvp.Value, existingColumns);
                             DataTable transformedTable = new DataTable();
 
                             if (selectedBrand == InstrumentBrand.ThermoFisher7500)
@@ -313,19 +346,40 @@ namespace MoleLaboratoryExcel.Forms
                                 transformedTable = DataTableUtil.TransformQPCRData(processedTable);
                                 DataTableUtil.AddWellColumns(transformedTable, "Well");
                             }
-                            else
+                            else if (selectedBrand == InstrumentBrand.HONGSHI)
                             {
                                 processedTable = DataTableUtil.RemoveEmptyOrNullRowsEfficiently(
                                processedTable, "目标");
+                                // 宏石：在原有 Ct/属性 的基础上新增“浓度”列（如存在）
+                                var valueCols = new List<string> { "Ct", "属性" };
+                                var suffixes = new List<string> { "-Ct", "-属性" };
+                                if (processedTable.Columns.Contains("浓度"))
+                                {
+                                    valueCols.Add("浓度");
+                                    suffixes.Add("-浓度");
+                                }
+
                                 transformedTable = DataTableUtil.TransformRowsToColumns(
-                   processedTable,
-                   groupByColumns: new[] { "反应孔", "样本名称" },             // 按Well分��
-                   categoryColumn: "目标",       // 使用Target Name作为类别
-                   valueColumns: new[] { "Ct", "属性" },  // 需要转换的值列
-                   suffixes: new[] { "-Ct", "-属性" }    // 对应的后缀
-                    
-               );
+                                    processedTable,
+                                    groupByColumns: new[] { "反应孔", "样本名称" },             // 按Well分组
+                                    categoryColumn: "目标",       // 使用Target Name作为类别
+                                    valueColumns: valueCols.ToArray(),  // 需要转换的值列
+                                    suffixes: suffixes.ToArray()    // 对应的后缀
+                                );
                                 DataTableUtil.AddWellColumns(transformedTable, "反应孔");
+                            }
+                            else // 鲲鹏
+                            {
+                                processedTable = DataTableUtil.RemoveEmptyOrNullRowsEfficiently(
+                               processedTable, "荧光染料");
+                                transformedTable = DataTableUtil.TransformRowsToColumns(
+                                    processedTable,
+                                    groupByColumns: new[] { "孔", "样本名称" },
+                                    categoryColumn: "荧光染料",
+                                    valueColumns: new[] { "Cq平均值", "浓度" },
+                                    suffixes: new[] { "-Cq", "-浓度" }
+                                );
+                                DataTableUtil.AddWellColumns(transformedTable, "孔");
                             }
 
                             string saveFilename = "整理后_" + kvp.Key;
@@ -357,17 +411,23 @@ namespace MoleLaboratoryExcel.Forms
 
         private void CmbBrand_SelectedIndexChanged(object sender, EventArgs e)
         {
-            selectedBrand = cmbBrand.SelectedIndex == 0 ?
-                InstrumentBrand.ThermoFisher7500 :
-                InstrumentBrand.HONGSHI;
+            if (cmbBrand.SelectedIndex == 0)
+                selectedBrand = InstrumentBrand.ThermoFisher7500;
+            else if (cmbBrand.SelectedIndex == 1)
+                selectedBrand = InstrumentBrand.HONGSHI;
+            else
+                selectedBrand = InstrumentBrand.KUNPENG;
         }
 
         private string[] GetColumnNames()
         {
             // 根据不同品牌返回对应列名数组
-            return selectedBrand == InstrumentBrand.ThermoFisher7500
-                ? new[] { "Well", "Sample Name", "Target Name", "Cт", "Quantity" }
-                : new[] { "反应孔", "样本名称", "目标", "Ct", "属性" };
+            if (selectedBrand == InstrumentBrand.ThermoFisher7500)
+                return new[] { "Well", "Sample Name", "Target Name", "Cт", "Quantity" };
+            if (selectedBrand == InstrumentBrand.HONGSHI)
+                return new[] { "反应孔", "样本名称", "目标", "Ct", "属性", "浓度" };
+            // 鲲鹏
+            return new[] { "孔", "样本名称", "荧光染料", "Cq平均值", "浓度" };
         }
     }
 }
