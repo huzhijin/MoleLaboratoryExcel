@@ -60,6 +60,9 @@ public static class LogHelper
             case "错误":
             case "登录失败":
                 return "Error";
+            case "批量重命名":
+            case "BatchRename":
+                return "BatchRename";
             default:
                 return action;
         }

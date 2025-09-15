@@ -39,6 +39,13 @@ namespace MoleLaboratoryExcel
                 Style = ElementStyle.Group
             };
 
+            // 创建文件工具组
+            var fileToolsGroup = new AccordionControlElement
+            {
+                Text = "文件工具",
+                Style = ElementStyle.Group
+            };
+
             // 创建系统管理组
             var systemGroup = new AccordionControlElement
             {
@@ -61,6 +68,14 @@ namespace MoleLaboratoryExcel
             };
             wordItem1.Click += (s, e) => HandleWordTemplate();
 
+            // 添加批量重命名菜单项
+            var batchRenameItem = new AccordionControlElement
+            {
+                Style = ElementStyle.Item,
+                Text = "批量重命名"
+            };
+            batchRenameItem.Click += (s, e) => HandleBatchRename();
+
             // 添加用户管理菜单项
             var userManageItem = new AccordionControlElement
             {
@@ -80,10 +95,11 @@ namespace MoleLaboratoryExcel
             // 组装菜单结构
             excelGroup.Elements.Add(excelItem1);
             wordGroup.Elements.Add(wordItem1);
+            fileToolsGroup.Elements.Add(batchRenameItem);
             systemGroup.Elements.AddRange(new[] { userManageItem, logQueryItem });
 
             // 根据用户角色显示菜单
-            var menuItems = new List<AccordionControlElement> { excelGroup, wordGroup };
+            var menuItems = new List<AccordionControlElement> { excelGroup, wordGroup, fileToolsGroup };
 
             // 只有管理员可以看到系统管理菜单
             if (Program.CurrentUser?.Role == "管理员")
@@ -151,6 +167,13 @@ namespace MoleLaboratoryExcel
             var logQueryForm = new LogQueryForm();
             logQueryForm.StartPosition = FormStartPosition.CenterScreen;
             logQueryForm.ShowDialog();
+        }
+
+        private void HandleBatchRename()
+        {
+            var batchRenameForm = new Forms.BatchRenameForm();
+            batchRenameForm.StartPosition = FormStartPosition.CenterScreen;
+            batchRenameForm.ShowDialog();
         }
     }
 }
